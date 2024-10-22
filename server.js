@@ -20,6 +20,18 @@ app.get('/api/weather', async (req, res) => {
   }
 });
 
+app.get('/api/city',async(req,res)=>{
+  const {city} = req.query;
+  try{
+    const cityResponse=await axios.get(`https://geocoding-api.open-meteo.com/v1/search?name=${city}&count=1&language=en&format=json`);
+    const { latitude, longitude } = data.results[0];
+    res.json(latitude,longitude);
+  } catch (error){
+    console.error('Error fetching city data',error);
+    res.status(500).send('Error fetching city data');
+  }
+});
+
 app.post('/api/chatgpt', async (req, res) => {
   const { weatherData, userPreferences } = req.body;
   try {
