@@ -13,6 +13,7 @@ app.get('/api/weather', async (req, res) => {
   const { latitude, longitude } = req.query;
   try {
     const weatherResponse = await axios.get(`https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&hourly=temperature_2m`);
+    // console.log(cityResponse)
     res.json(weatherResponse.data);
   } catch (error) {
     console.error('Error fetching weather data:', error);
@@ -24,8 +25,8 @@ app.get('/api/city',async(req,res)=>{
   const {city} = req.query;
   try{
     const cityResponse=await axios.get(`https://geocoding-api.open-meteo.com/v1/search?name=${city}&count=1&language=en&format=json`);
-    const { latitude, longitude } = data.results[0];
-    res.json(latitude,longitude);
+    const { latitude, longitude } = cityResponse.data.results[0];
+    res.json({ latitude, longitude });
   } catch (error){
     console.error('Error fetching city data',error);
     res.status(500).send('Error fetching city data');
@@ -38,7 +39,7 @@ app.post('/api/chatgpt', async (req, res) => {
     const chatResponse = await axios.post(
       'https://api.openai.com/v1/chat/completions',
       {
-        model: 'gpt-3.5-turbo',
+        model: 'gpt-3.5-turbo-1106',
         messages: [
           {
             role: 'system',
