@@ -124,7 +124,7 @@ app.get('/api/city',async(req,res)=>{
 });
 
 app.post('/api/chatgpt', async (req, res) => {
-  const { weatherData, userPreferences } = req.body;
+  const { weatherData, userPreferences,date } = req.body;
   try {
     const chatResponse = await axios.post(
       'https://api.openai.com/v1/chat/completions',
@@ -137,7 +137,8 @@ app.post('/api/chatgpt', async (req, res) => {
           },
           {
             role: 'user',
-            content: `Here is the weather data: ${JSON.stringify(weatherData)}. Customer preferences: ${JSON.stringify(userPreferences)}.`
+            content: `Here is the weather data: ${JSON.stringify(weatherData)}. The customer preferences are: ${JSON.stringify(userPreferences)}, provide recommendations for a date of: ${JSON.stringify(date)}, in this format JSON - summary:,clothes:[hat:(if required),top:,bottom:,shoes:],items:[], explanation:[]
+where in explanation you explain why you have chosen the clothes and items. write no text at all, only provide the JSON.`
           }
         ]
       },
