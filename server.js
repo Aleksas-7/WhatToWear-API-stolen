@@ -1,8 +1,6 @@
 // Create table users (id SERIAL PRIMARY KEY, username VARCHAR(255) UNIQUE, email VARCHAR(255) UNIQUE, password VARCHAR(255), provider VARCHAR(50), provider_id VARCHAR(255), created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP);
 //CREATE TABLE generation_history (id SERIAL PRIMARY KEY, user_id INT REFERENCES users(id) ON DELETE CASCADE, prompt TEXT NOT NULL, response TEXT NOT NULL, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP);
 
-
-
 const express = require("express");
 const axios = require("axios");
 const cors = require("cors");
@@ -11,7 +9,6 @@ const { registerUser } = require("./authConfig");
 const session = require("express-session");
 const flash = require("connect-flash");
 const { Pool } = require("pg");
-
 
 require("dotenv").config();
 
@@ -47,7 +44,6 @@ app.use(passport.initialize());
 app.use(passport.session());
 app.use(express.urlencoded({ extended: true }));
 
-
 const ensureAuthenticated = (req, res, next) => {
     if (req.isAuthenticated()) {
         return next();
@@ -59,7 +55,9 @@ app.post("/api/save-history", ensureAuthenticated, async (req, res) => {
     const { prompt, response } = req.body;
 
     if (!prompt || !response) {
-        return res.status(400).json({ message: "Prompt and response are required" });
+        return res
+            .status(400)
+            .json({ message: "Prompt and response are required" });
     }
 
     try {
@@ -88,9 +86,6 @@ app.get("/api/history", ensureAuthenticated, async (req, res) => {
         res.status(500).json({ message: "Internal server error" });
     }
 });
-
-
-
 
 app.post("/login", passport.authenticate("local"), (req, res) => {
     console.log("User authenticated:", req.user);
@@ -134,9 +129,9 @@ app.get(
 );
 app.get(
     "/auth/google/callback",
-    passport.authenticate("google", { failureRedirect: "/" }),
+    passport.authenticate("google", { failureRedirect: process.env.SAAS_URL }),
     (req, res) => {
-        res.redirect("/");
+        res.redirect(process.env.SAAS_URL);
     }
 );
 
@@ -155,7 +150,7 @@ app.get("/api/weather", async (req, res) => {
     const { latitude, longitude } = req.query;
     try {
         const weatherResponse = await axios.get(
-            `https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&hourly=temperature_2m`
+            `https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&hourly=temperature_2m,weather_code`
         );
         // console.log(cityResponse)
         res.json(weatherResponse.data);
@@ -212,20 +207,23 @@ where in explanation you explain why you have chosen the clothes and items. writ
                 },
             }
         );
-        
+
         const responseText = chatResponse.data.choices[0].message.content;
-        const cleanedResponse = responseText.replace(/^```json\n/, '').replace(/\n```$/, '');
+        const cleanedResponse = responseText
+            .replace(/^```json\n/, "")
+            .replace(/\n```$/, "");
 
         const jsonObject = JSON.parse(cleanedResponse);
 
         const clothingItems = jsonObject.clothes;
 
-
         const imageGenerationResponse = await axios.post(
             "https://api.openai.com/v1/images/generations",
             {
-                model:"dall-e-3",
-                prompt: `Generate an image of a person wearing the following clothes: ${JSON.stringify(clothingItems)}`,
+                model: "dall-e-3",
+                prompt: `Generate an image of a person wearing the following clothes: ${JSON.stringify(
+                    clothingItems
+                )}`,
                 n: 1,
                 size: "1024x1024",
             },
@@ -258,7 +256,6 @@ where in explanation you explain why you have chosen the clothes and items. writ
             }
         }
 
-
         res.json({
             clothingRecommendation: jsonObject,
             imageUrl: imageUrl,
@@ -268,7 +265,6 @@ where in explanation you explain why you have chosen the clothes and items. writ
         res.status(500).send("Error fetching ChatGPT response");
     }
 });
-
 
 // Start the server
 app.listen(PORT, () => {
