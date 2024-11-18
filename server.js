@@ -141,10 +141,20 @@ app.get("/logout", (req, res) => {
 });
 
 // Facebook authentication
-// app.get('/auth/facebook', passport.authenticate('facebook', { scope: ['email'] }));
-// app.get('/auth/facebook/callback', passport.authenticate('facebook', { failureRedirect: '/' }), (req, res) => {
-//   res.redirect('/');
-// });
+app.get(
+    "/auth/facebook",
+    passport.authenticate("facebook", { scope: ["email"] })
+);
+
+app.get(
+    "/auth/facebook/callback",
+    passport.authenticate("facebook", {
+        failureRedirect: process.env.SAAS_URL,
+    }),
+    (req, res) => {
+        res.redirect(process.env.SAAS_URL);
+    }
+);
 
 app.get("/api/weather", async (req, res) => {
     const { latitude, longitude } = req.query;
