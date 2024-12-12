@@ -51,7 +51,6 @@ const ensureAuthenticated = (req, res, next) => {
     res.status(401).json({ message: "Unauthorized" });
 };
 
-
 async function chatGPTPrompt(weatherData, userPreferences, date) {
     const chatResponse = await axios.post(
         "https://api.openai.com/v1/chat/completions",
@@ -84,7 +83,7 @@ where in explanation you explain why you have chosen the clothes and items. writ
         }
     );
     return chatResponse;
-};
+}
 
 async function dallePrompt(clothingItems) {
     const imageGenerationResponse = await axios.post(
@@ -104,8 +103,8 @@ async function dallePrompt(clothingItems) {
             },
         }
     );
-    return imageGenerationResponse
-};
+    return imageGenerationResponse;
+}
 
 app.post("/api/save-history", ensureAuthenticated, async (req, res) => {
     const { prompt, response } = req.body;
@@ -191,8 +190,10 @@ app.get(
     }
 );
 
-app.get("/logout", (req, res) => {
-    req.logout();
+app.get("/logout", (req, res, next) => {
+    req.logout((error) => {
+        if (error) return next(error);
+    });
     res.json({ message: "Logged out successfully" });
 });
 
@@ -246,7 +247,7 @@ app.post("/api/chatgpt", async (req, res) => {
     const userPreferences = req.body.userPreferences;
     const date = req.body.date;
     try {
-        chatResponse = await chatGPTPrompt(weatherData, userPreferences, date)
+        chatResponse = await chatGPTPrompt(weatherData, userPreferences, date);
 
         const responseText = chatResponse.data.choices[0].message.content;
         const cleanedResponse = responseText
@@ -257,7 +258,7 @@ app.post("/api/chatgpt", async (req, res) => {
 
         const clothingItems = jsonObject.clothes;
 
-        const imageGenerationResponse = await dallePrompt(clothingItems)
+        const imageGenerationResponse = await dallePrompt(clothingItems);
 
         const imageUrl = imageGenerationResponse.data.data[0].url;
 
@@ -271,7 +272,7 @@ app.post("/api/chatgpt", async (req, res) => {
                         JSON.stringify({
                             weatherData,
                             userPreferences,
-                            date
+                            date,
                         }),
                         responseText,
                     ]
@@ -280,7 +281,6 @@ app.post("/api/chatgpt", async (req, res) => {
                 console.error("Error saving history:", error);
             }
         }
-
 
         res.json({
             clothingRecommendation: jsonObject,
@@ -292,11 +292,11 @@ app.post("/api/chatgpt", async (req, res) => {
     }
 });
 
-app.post('/api/chatgpt/regenerate', async (req, res) => {
+app.post("/api/chatgpt/regenerate", async (req, res) => {
     const generation_id = req.body.id;
     try {
         const test = await pool.query(
-            'SELECT * FROM generation_history WHERE id = ($1)',
+            "SELECT * FROM generation_history WHERE id = ($1)",
             [generation_id]
         );
 
@@ -305,7 +305,7 @@ app.post('/api/chatgpt/regenerate', async (req, res) => {
         const userPreferences = JSON.parse(test.rows[0].prompt).userPreferences;
 
         const currentDate = new Date();
-        const date = currentDate.toISOString().split('T')[0];
+        const date = currentDate.toISOString().split("T")[0];
 
         const latitude = weatherData.latitude;
         const longitude = weatherData.longitude;
@@ -314,7 +314,11 @@ app.post('/api/chatgpt/regenerate', async (req, res) => {
             `https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&hourly=temperature_2m,weather_code`
         );
 
-        const chatResponse = await chatGPTPrompt(weatherResponse.data, userPreferences, date);
+        const chatResponse = await chatGPTPrompt(
+            weatherResponse.data,
+            userPreferences,
+            date
+        );
 
         const responseText = chatResponse.data.choices[0].message.content;
 
@@ -327,25 +331,22 @@ app.post('/api/chatgpt/regenerate', async (req, res) => {
         const clothingItems = jsonObject.clothes;
         weatherData = weatherResponse.data;
         const result = await pool.query(
-            'UPDATE generation_history SET prompt = $1, response = $2 WHERE id = $3 RETURNING *',
-            [JSON.stringify({
-                weatherData,
-                userPreferences,
-                date
-            }),
+            "UPDATE generation_history SET prompt = $1, response = $2 WHERE id = $3 RETURNING *",
+            [
+                JSON.stringify({
+                    weatherData,
+                    userPreferences,
+                    date,
+                }),
                 cleanedResponse,
-                generation_id
+                generation_id,
             ]
         );
-        if (result) res.status(200).send('regenerated succesfully');
-        else res.status(400).send('error updating table');
-
-
-
+        if (result) res.status(200).send("regenerated succesfully");
+        else res.status(400).send("error updating table");
     } catch (error) {
         console.error("Error regenerating history:", error);
     }
-
 });
 
 // Start the server
