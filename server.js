@@ -51,20 +51,14 @@ const ensureAuthenticated = (req, res, next) => {
     res.status(401).json({ message: "Unauthorized" });
 };
 
-<<<<<<< HEAD
-async function chatGPTPrompt(weatherData, userPreferences, date) {
-=======
 const ensureAdmin = (req, res, next) => {
-    if (req.isAuthenticated() && req.user.role === 'admin') {
+    if (req.isAuthenticated() && req.user.role === "admin") {
         return next();
     }
     res.status(403).json({ message: "Access forbidden: Admins only" });
 };
 
-
-
-async function chatGPTPrompt(weatherData,userPreferences,date){
->>>>>>> 1d7e8bc1fd4232296156453550c46fb6c384e250
+async function chatGPTPrompt(weatherData, userPreferences, date) {
     const chatResponse = await axios.post(
         "https://api.openai.com/v1/chat/completions",
         {
@@ -261,9 +255,6 @@ app.post("/api/chatgpt", async (req, res) => {
     const date = req.body.date;
     let registeredPreferences = {};
     try {
-<<<<<<< HEAD
-        chatResponse = await chatGPTPrompt(weatherData, userPreferences, date);
-=======
         if (req.isAuthenticated()) {
             const { id: userId } = req.user;
             const userResult = await pool.query(
@@ -277,8 +268,7 @@ app.post("/api/chatgpt", async (req, res) => {
             ...unregisteredPreferences, // Fallback to unregistered preferences
         };
         console.log(userPreferences);
-        chatResponse = await chatGPTPrompt(weatherData,userPreferences,date)
->>>>>>> 1d7e8bc1fd4232296156453550c46fb6c384e250
+        chatResponse = await chatGPTPrompt(weatherData, userPreferences, date);
 
         const responseText = chatResponse.data.choices[0].message.content;
         const cleanedResponse = responseText
@@ -382,7 +372,9 @@ app.post("/api/chatgpt/regenerate", async (req, res) => {
 
 app.get("/admin/users", ensureAdmin, async (req, res) => {
     try {
-        const { rows } = await pool.query("SELECT id, username, email, role FROM users");
+        const { rows } = await pool.query(
+            "SELECT id, username, email, role FROM users"
+        );
         res.json(rows);
     } catch (error) {
         console.error("Error fetching users:", error);
@@ -401,34 +393,44 @@ app.delete("/admin/users/:id", ensureAdmin, async (req, res) => {
     }
 });
 
-app.post("/api/rate/:generationId/:rating", ensureAuthenticated, async (req, res) => {
-    const { generationId, rating } = req.params;
+app.post(
+    "/api/rate/:generationId/:rating",
+    ensureAuthenticated,
+    async (req, res) => {
+        const { generationId, rating } = req.params;
 
-    if (!rating || rating < 1 || rating > 5) {
-        return res.status(400).json({ message: "Rating must be between 1 and 5" });
-    }
-
-    try {
-        const { rowCount } = await pool.query(
-            "UPDATE generation_history SET rating = $1 WHERE id = $2 AND user_id = $3",
-            [rating, generationId, req.user.id]
-        );
-
-        if (rowCount === 0) {
-            return res.status(404).json({ message: "Generation not found or not authorized" });
+        if (!rating || rating < 1 || rating > 5) {
+            return res
+                .status(400)
+                .json({ message: "Rating must be between 1 and 5" });
         }
 
-        res.json({ message: "Rating saved successfully" });
-    } catch (error) {
-        console.error("Error saving rating:", error);
-        res.status(500).json({ message: "Internal server error" });
+        try {
+            const { rowCount } = await pool.query(
+                "UPDATE generation_history SET rating = $1 WHERE id = $2 AND user_id = $3",
+                [rating, generationId, req.user.id]
+            );
+
+            if (rowCount === 0) {
+                return res
+                    .status(404)
+                    .json({
+                        message: "Generation not found or not authorized",
+                    });
+            }
+
+            res.json({ message: "Rating saved successfully" });
+        } catch (error) {
+            console.error("Error saving rating:", error);
+            res.status(500).json({ message: "Internal server error" });
+        }
     }
-});
+);
 
 app.post("/api/user/preferences", ensureAuthenticated, async (req, res) => {
     const { preferences } = req.body;
     console.log(preferences);
-    console.log(typeof(preferences));
+    console.log(typeof preferences);
     if (!preferences || typeof preferences !== "object") {
         return res.status(400).json({ message: "Invalid preferences format" });
     }
@@ -445,7 +447,6 @@ app.post("/api/user/preferences", ensureAuthenticated, async (req, res) => {
         res.status(500).json({ message: "Internal server error" });
     }
 });
-
 
 // Start the server
 app.listen(PORT, () => {
