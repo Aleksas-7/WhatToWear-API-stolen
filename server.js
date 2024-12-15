@@ -139,7 +139,7 @@ app.get("/api/history", ensureAuthenticated, async (req, res) => {
     try {
         const { id: userId } = req.user;
         const { rows } = await pool.query(
-            "SELECT id, prompt, response, created_at FROM generation_history WHERE user_id = $1 ORDER BY created_at DESC",
+            "SELECT id, prompt, response, rating, created_at FROM generation_history WHERE user_id = $1 ORDER BY created_at DESC",
             [userId]
         );
         res.json(rows);
@@ -177,8 +177,8 @@ app.post("/register", async (req, res) => {
 
 app.get("/me", (req, res) => {
     if (req.isAuthenticated()) {
-        const { username, email } = req.user;
-        res.json({ username, email });
+        const { username, email, preferences, role } = req.user;
+        res.json({ username, email, preferences, role });
     } else {
         res.status(401).json({ message: "Unauthorized" });
     }
@@ -267,7 +267,6 @@ app.post("/api/chatgpt", async (req, res) => {
             ...registeredPreferences, // Registered user's preferences take priority
             ...unregisteredPreferences, // Fallback to unregistered preferences
         };
-        console.log(userPreferences);
         chatResponse = await chatGPTPrompt(weatherData, userPreferences, date);
 
         const responseText = chatResponse.data.choices[0].message.content;
@@ -295,7 +294,7 @@ app.post("/api/chatgpt", async (req, res) => {
                             userPreferences,
                             date,
                         }),
-                        responseText,
+                        cleanedResponse,
                     ]
                 );
             } catch (error) {
@@ -412,11 +411,9 @@ app.post(
             );
 
             if (rowCount === 0) {
-                return res
-                    .status(404)
-                    .json({
-                        message: "Generation not found or not authorized",
-                    });
+                return res.status(404).json({
+                    message: "Generation not found or not authorized",
+                });
             }
 
             res.json({ message: "Rating saved successfully" });
