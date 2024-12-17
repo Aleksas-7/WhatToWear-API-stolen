@@ -372,7 +372,7 @@ app.post("/api/chatgpt/regenerate", async (req, res) => {
 app.get("/admin/users", ensureAdmin, async (req, res) => {
     try {
         const { rows } = await pool.query(
-            "SELECT id, username, email, role FROM users"
+            "SELECT id, username, email, role FROM users WHERE role===\'user\'"
         );
         res.json(rows);
     } catch (error) {
