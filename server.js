@@ -1,6 +1,11 @@
 // Create table users (id SERIAL PRIMARY KEY, username VARCHAR(255) UNIQUE, email VARCHAR(255) UNIQUE, password VARCHAR(255), provider VARCHAR(50), provider_id VARCHAR(255),role varchar(50) default 'user', created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, preferences JSONB DEFAULT '{}');
 // CREATE TABLE generation_history (id SERIAL PRIMARY KEY, user_id INT REFERENCES users(id) ON DELETE CASCADE, prompt TEXT NOT NULL, response TEXT NOT NULL, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,rating INT CHECK (rating BETWEEN 1 AND 5));
 
+// alter table generation_history
+// mydatabase-> alter column response
+// mydatabase-> type jsonb
+// mydatabase-> using response::jsonb;
+
 const express = require("express");
 const axios = require("axios");
 const cors = require("cors");
@@ -175,14 +180,8 @@ app.post("/register", async (req, res) => {
     }
 });
 
-app.get("/me", (req, res) => {
-    if (req.isAuthenticated()) {
-        const { username, email, preferences, role } = req.user;
-        res.json({ username, email, preferences, role });
-    } else {
-        res.status(401).json({ message: "Unauthorized" });
-    }
-});
+
+
 
 // Google authentication
 app.get(
@@ -219,6 +218,15 @@ app.get(
         res.redirect(process.env.SAAS_URL);
     }
 );
+
+app.get("/me", (req, res) => {
+    if (req.isAuthenticated()) {
+        const { username, email, preferences, role } = req.user;
+        res.json({ username, email, preferences, role });
+    } else {
+        res.status(401).json({ message: "Unauthorized" });
+    }
+});
 
 app.get("/api/weather", async (req, res) => {
     const { latitude, longitude } = req.query;
