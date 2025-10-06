@@ -7,5 +7,5 @@ enabled = true
 
 
 [[transformers]]
-name = "coverage"
+name = "prettier"
 enabled = true
